@@ -1,0 +1,15 @@
+pl - player starts (resets game as well)
+sw - switch starts (resets game as well)
+
+tr|tm|tr
+ml|mm|mr
+bl|bm|br
+
+total of 11 inputs
+
+sv - switch wins
+pv - player wins
+dr - draw
+pg - still playing
+
+total of 4 outputs
