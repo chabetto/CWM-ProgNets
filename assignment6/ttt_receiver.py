@@ -50,20 +50,20 @@ def main():
                     if (cond == "pg"):
                         print('', rttt.tl.decode('ascii'),rttt.tm.decode('ascii'),rttt.tr.decode('ascii'),'\n\n',
                         rttt.ml.decode('ascii'),rttt.mm.decode('ascii'),rttt.mr.decode('ascii'),'\n\n',
-                        rttt.bl.decode('ascii'),rttt.bm.decode('ascii'),rttt.br.decode('ascii'))
+                        rttt.bl.decode('ascii'),rttt.bm.decode('ascii'),rttt.br.decode('ascii'),'\n\n')
                     elif (cond == "sv"):
                         print("Switch wins")
                     elif (cond == "pv"):
                         print("You win")
                     elif (cond == "dr"):
-                        print("draw")
+                        print("Draw")
                     resp.show()
                 else:
                     print("cannot find ttt header in the packet")
             else:
                 print("Didn't receive response")
         except Exception as error:
-            print(error)
+            pass
 
 
 if __name__ == '__main__':

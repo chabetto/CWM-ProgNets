@@ -14,7 +14,7 @@ header ethernet_t {
 const bit<16> TTT_ETYPE     = 0x1234;
 const bit<8>  TTT_VER       = 0x01;   // v0.1
 const bit<8>  TTT_CROSS     = 0x78;   // 'x' player
-const bit<8>  TTT_BLANK     = 0x2d;   // '-'
+const bit<8>  TTT_BLANK     = 0x2d;   // '-' blank
 const bit<8>  TTT_NAUGHT    = 0x6f;   // 'o' switch
 /* initialisation (who starts) */
 const bit<16>  TTT_STARTSW   = 0x7377;   // switch starts game
@@ -26,14 +26,14 @@ const bit<16>  TTT_DRAW      = 0x6472;   // drawn game
 const bit<16>  TTT_PLAY      = 0x7067;   // currently still in play
 /* square to put on */
 const bit<16>  TTT_TL   = 0x746c;   // top left
-const bit<16>  TTT_TM   = 0x746d;   // top left
-const bit<16>  TTT_TR   = 0x7472;   // top left
-const bit<16>  TTT_ML   = 0x6d6c;   // top left
-const bit<16>  TTT_MM   = 0x6d6d;   // top left
-const bit<16>  TTT_MR   = 0x6d72;   // top left
-const bit<16>  TTT_BL   = 0x626c;   // top left
-const bit<16>  TTT_BM   = 0x626d;   // top left
-const bit<16>  TTT_BR   = 0x6272;   // top left
+const bit<16>  TTT_TM   = 0x746d;   // top middle
+const bit<16>  TTT_TR   = 0x7472;   // top right
+const bit<16>  TTT_ML   = 0x6d6c;   // middle left
+const bit<16>  TTT_MM   = 0x6d6d;   // middle middle
+const bit<16>  TTT_MR   = 0x6d72;   // middle right
+const bit<16>  TTT_BL   = 0x626c;   // bottom left
+const bit<16>  TTT_BM   = 0x626d;   // bottom middle
+const bit<16>  TTT_BR   = 0x6272;   // bottom right
 
 /*
  * ttt_t header
@@ -149,16 +149,11 @@ control MyIngress(inout headers hdr,
     }
 
     action send_back() {
-         save_board();
          bit<48> tmp;
          tmp = hdr.ethernet.dstAddr;
          hdr.ethernet.dstAddr = hdr.ethernet.srcAddr;
          hdr.ethernet.srcAddr = tmp;
          standard_metadata.egress_spec = standard_metadata.ingress_port;
-    }
-
-    action operation_drop() {
-        mark_to_drop(standard_metadata);
     }
 
     action clearBoard() {
@@ -174,41 +169,155 @@ control MyIngress(inout headers hdr,
         hdr.ttt.status = TTT_PLAY;
     }
 
-    action operation_play() {
-        load_board();
+    action player_place() {
         bit<16> sq = hdr.ttt.state;
         if (sq == TTT_TL) {
-            hdr.ttt.tl = TTT_CROSS;
-        } else if (sq == TTT_TM) { 
-            hdr.ttt.tm = TTT_CROSS;
-        } else if (sq == TTT_TR) { 
-            hdr.ttt.tr = TTT_CROSS;
-        } else if (sq == TTT_ML) { 
-            hdr.ttt.ml = TTT_CROSS;
-        } else if (sq == TTT_MM) { 
-            hdr.ttt.mm = TTT_CROSS;
-        } else if (sq == TTT_MR) { 
-            hdr.ttt.mr = TTT_CROSS;
-        } else if (sq == TTT_BL) { 
-            hdr.ttt.bl = TTT_CROSS;
-        } else if (sq == TTT_BM) { 
-            hdr.ttt.bm = TTT_CROSS;
-        } else if (sq == TTT_BR) { 
-            hdr.ttt.br = TTT_CROSS;
+            if (hdr.ttt.tl == TTT_BLANK) {
+                hdr.ttt.tl = TTT_CROSS;
+            } else {
+                send_back();
+            }
+        } else if (sq == TTT_TM) {
+            if (hdr.ttt.tm == TTT_BLANK) {
+                hdr.ttt.tm = TTT_CROSS;
+            } else {
+                send_back();
+            }
+        } else if (sq == TTT_TR) {
+            if (hdr.ttt.tr == TTT_BLANK) {
+                hdr.ttt.tr = TTT_CROSS;
+            } else {
+                send_back();
+            }
+        } else if (sq == TTT_ML) {
+            if (hdr.ttt.ml == TTT_BLANK) {
+                hdr.ttt.ml = TTT_CROSS;
+            } else {
+                send_back();
+            }
+        } else if (sq == TTT_MM) {
+            if (hdr.ttt.mm == TTT_BLANK) {
+                hdr.ttt.mm = TTT_CROSS;
+            } else {
+                send_back();
+            }
+        } else if (sq == TTT_MR) {
+            if (hdr.ttt.mr == TTT_BLANK) {
+                hdr.ttt.mr = TTT_CROSS;
+            } else {
+                send_back();
+            }
+        }  else if (sq == TTT_BL) {
+            if (hdr.ttt.bl == TTT_BLANK) {
+                hdr.ttt.bl = TTT_CROSS;
+            } else {
+                send_back();
+            }
+        } else if (sq == TTT_BM) {
+            if (hdr.ttt.bm == TTT_BLANK) {
+                hdr.ttt.bm = TTT_CROSS;
+            } else {
+                send_back();
+            }
+        } else if (sq == TTT_BR) {
+            if (hdr.ttt.br == TTT_BLANK) {
+                hdr.ttt.br = TTT_CROSS;
+            } else {
+                send_back();
+            }
         }
+    }
+
+    action sw_place() {
+        if (hdr.ttt.tl == TTT_BLANK) {
+                hdr.ttt.tl = TTT_NAUGHT;
+        } else if (hdr.ttt.tm == TTT_BLANK) {
+            hdr.ttt.tm = TTT_NAUGHT;
+        } else if (hdr.ttt.tr == TTT_BLANK) {
+            hdr.ttt.tr = TTT_NAUGHT;
+        } else if (hdr.ttt.ml == TTT_BLANK) {
+                hdr.ttt.ml = TTT_NAUGHT;
+        } else if (hdr.ttt.mm == TTT_BLANK) {
+            hdr.ttt.mm = TTT_NAUGHT;
+        } else if (hdr.ttt.mr == TTT_BLANK) {
+            hdr.ttt.mr = TTT_NAUGHT;
+        } else if (hdr.ttt.bl == TTT_BLANK) {
+                hdr.ttt.bl = TTT_NAUGHT;
+        } else if (hdr.ttt.bm == TTT_BLANK) {
+            hdr.ttt.bm = TTT_NAUGHT;
+        } else if (hdr.ttt.br == TTT_BLANK) {
+            hdr.ttt.br = TTT_NAUGHT;
+        }
+    }
+
+    action check_win(bit<8> sq) {
+        bit<2> win = 0;
+        if (hdr.ttt.mm == sq) {
+            if ((hdr.ttt.ml == sq) && (hdr.ttt.mr == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.tm == sq) && (hdr.ttt.bm == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.tl == sq) && (hdr.ttt.br == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.tr == sq) && (hdr.ttt.bl == sq)) {
+                win = 1;
+            }
+        }
+        if (hdr.ttt.tl == sq) {
+            if ((hdr.ttt.tm == sq) && (hdr.ttt.tr == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.ml == sq) && (hdr.ttt.bl == sq)) {
+                win = 1;
+            }
+        }
+        if (hdr.ttt.br == sq) {
+            if ((hdr.ttt.bm == sq) && (hdr.ttt.bl == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.tr == sq) && (hdr.ttt.mr == sq)) {
+                win = 1;
+            }
+        }
+        if ((hdr.ttt.tl != TTT_BLANK) && (hdr.ttt.tm != TTT_BLANK) && (hdr.ttt.tr != TTT_BLANK) &&
+        (hdr.ttt.ml != TTT_BLANK) && (hdr.ttt.mm != TTT_BLANK) && (hdr.ttt.mr != TTT_BLANK) &&
+        (hdr.ttt.bl != TTT_BLANK) && (hdr.ttt.bm != TTT_BLANK) && (hdr.ttt.br != TTT_BLANK)) {
+            win = 2;
+        }
+        if ((sq == TTT_CROSS) && (win == 1)) {
+            hdr.ttt.status = TTT_PLWIN;
+        } else if ((sq == TTT_NAUGHT) && (win == 1)) {
+            hdr.ttt.status = TTT_SWWIN;
+        } else if (win == 2) {
+            hdr.ttt.status = TTT_DRAW;
+        }
+    }
+
+    action operation_play() {
+        load_board();
+        player_place();
+        sw_place();
+        check_win(TTT_CROSS);
+        check_win(TTT_NAUGHT);
+        save_board();
         send_back();
     }
 
     action operation_startSw() {
         /* clear board and input first move */
         clearBoard();
-        hdr.ttt.bl = TTT_NAUGHT;
+        sw_place();
+        save_board();
         send_back();
     }
 
     action operation_startPl() {
         /* clear board and send back so player can input their move */
         clearBoard();
+        save_board();
         send_back();
     }
 
