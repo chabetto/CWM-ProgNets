@@ -47,17 +47,15 @@ def main():
                 rttt=resp[ttt]
                 if ttt:
                     cond = rttt.status.decode('ascii')
-                    if (cond == "pg"):
-                        print('', rttt.tl.decode('ascii'),rttt.tm.decode('ascii'),rttt.tr.decode('ascii'),'\n\n',
-                        rttt.ml.decode('ascii'),rttt.mm.decode('ascii'),rttt.mr.decode('ascii'),'\n\n',
-                        rttt.bl.decode('ascii'),rttt.bm.decode('ascii'),rttt.br.decode('ascii'),'\n\n')
-                    elif (cond == "sv"):
-                        print("Switch wins")
+                    print('', rttt.tl.decode('ascii'),rttt.tm.decode('ascii'),rttt.tr.decode('ascii'),'\n\n',
+                    rttt.ml.decode('ascii'),rttt.mm.decode('ascii'),rttt.mr.decode('ascii'),'\n\n',
+                    rttt.bl.decode('ascii'),rttt.bm.decode('ascii'),rttt.br.decode('ascii'),'\n\n')
+                    if (cond == "sv"):
+                        print("Switch wins\n")
                     elif (cond == "pv"):
-                        print("You win")
+                        print("You win\n")
                     elif (cond == "dr"):
-                        print("Draw")
-                    resp.show()
+                        print("Draw\n")
                 else:
                     print("cannot find ttt header in the packet")
             else:

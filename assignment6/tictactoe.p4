@@ -156,6 +156,52 @@ control MyIngress(inout headers hdr,
          standard_metadata.egress_spec = standard_metadata.ingress_port;
     }
 
+    action check_win(bit<8> sq) {
+        bit<2> win = 0;
+        if (hdr.ttt.mm == sq) {
+            if ((hdr.ttt.ml == sq) && (hdr.ttt.mr == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.tm == sq) && (hdr.ttt.bm == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.tl == sq) && (hdr.ttt.br == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.tr == sq) && (hdr.ttt.bl == sq)) {
+                win = 1;
+            }
+        }
+        if (hdr.ttt.tl == sq) {
+            if ((hdr.ttt.tm == sq) && (hdr.ttt.tr == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.ml == sq) && (hdr.ttt.bl == sq)) {
+                win = 1;
+            }
+        }
+        if (hdr.ttt.br == sq) {
+            if ((hdr.ttt.bm == sq) && (hdr.ttt.bl == sq)) {
+                win = 1;
+            }
+            if ((hdr.ttt.tr == sq) && (hdr.ttt.mr == sq)) {
+                win = 1;
+            }
+        }
+        if ((hdr.ttt.tl != TTT_BLANK) && (hdr.ttt.tm != TTT_BLANK) && (hdr.ttt.tr != TTT_BLANK) &&
+        (hdr.ttt.ml != TTT_BLANK) && (hdr.ttt.mm != TTT_BLANK) && (hdr.ttt.mr != TTT_BLANK) &&
+        (hdr.ttt.bl != TTT_BLANK) && (hdr.ttt.bm != TTT_BLANK) && (hdr.ttt.br != TTT_BLANK)) {
+            win = 2;
+        }
+        if ((sq == TTT_CROSS) && (win == 1)) {
+            hdr.ttt.status = TTT_PLWIN;
+        } else if ((sq == TTT_NAUGHT) && (win == 1)) {
+            hdr.ttt.status = TTT_SWWIN;
+        } else if (win == 2) {
+            hdr.ttt.status = TTT_DRAW;
+        }
+    }
+
     action clearBoard() {
         hdr.ttt.bl = TTT_BLANK;
         hdr.ttt.bm = TTT_BLANK;
@@ -228,21 +274,21 @@ control MyIngress(inout headers hdr,
         }
     }
 
-    action sw_place() {
+    action next_place() {
         if (hdr.ttt.tl == TTT_BLANK) {
-                hdr.ttt.tl = TTT_NAUGHT;
+            hdr.ttt.tl = TTT_NAUGHT;
         } else if (hdr.ttt.tm == TTT_BLANK) {
             hdr.ttt.tm = TTT_NAUGHT;
         } else if (hdr.ttt.tr == TTT_BLANK) {
             hdr.ttt.tr = TTT_NAUGHT;
         } else if (hdr.ttt.ml == TTT_BLANK) {
-                hdr.ttt.ml = TTT_NAUGHT;
+            hdr.ttt.ml = TTT_NAUGHT;
         } else if (hdr.ttt.mm == TTT_BLANK) {
             hdr.ttt.mm = TTT_NAUGHT;
         } else if (hdr.ttt.mr == TTT_BLANK) {
             hdr.ttt.mr = TTT_NAUGHT;
         } else if (hdr.ttt.bl == TTT_BLANK) {
-                hdr.ttt.bl = TTT_NAUGHT;
+            hdr.ttt.bl = TTT_NAUGHT;
         } else if (hdr.ttt.bm == TTT_BLANK) {
             hdr.ttt.bm = TTT_NAUGHT;
         } else if (hdr.ttt.br == TTT_BLANK) {
@@ -250,58 +296,103 @@ control MyIngress(inout headers hdr,
         }
     }
 
-    action check_win(bit<8> sq) {
-        bit<2> win = 0;
-        if (hdr.ttt.mm == sq) {
-            if ((hdr.ttt.ml == sq) && (hdr.ttt.mr == sq)) {
-                win = 1;
+    /*action check_for_state(bit<8> sq) {
+        if ((hdr.ttt.mm == sq) && (hdr.ttt.tm == sq) && (hdr.ttt.bm == TTT_BLANK)) {
+            hdr.ttt.bm = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        }  else if ((hdr.ttt.mm == sq) && (hdr.ttt.bm == sq) && (hdr.ttt.tm == TTT_BLANK)) {
+            hdr.ttt.tm = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.mm == sq) && (hdr.ttt.ml == sq) && (hdr.ttt.mr == TTT_BLANK)) {
+            hdr.ttt.mr = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.mm == sq) && (hdr.ttt.mr == sq) && (hdr.ttt.ml == TTT_BLANK)) {
+            hdr.ttt.ml = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.mm == sq) && (hdr.ttt.tl == sq) && (hdr.ttt.br == TTT_BLANK)) {
+            hdr.ttt.br = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.mm == sq) && (hdr.ttt.br == sq) && (hdr.ttt.tl == TTT_BLANK)) {
+            hdr.ttt.tl = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.mm == sq) && (hdr.ttt.bl == sq) && (hdr.ttt.tr == TTT_BLANK)) {
+            hdr.ttt.tr = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.mm == sq) && (hdr.ttt.tr == sq) && (hdr.ttt.bl == TTT_BLANK)) {
+            hdr.ttt.bl = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.tl == sq) && (hdr.ttt.tr == sq) && (hdr.ttt.tm == TTT_BLANK)) {
+            hdr.ttt.tm = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.tl == sq) && (hdr.ttt.tm == sq) && (hdr.ttt.tr == TTT_BLANK)) {
+            hdr.ttt.tr = TTT_NAUGHT;
+            swPl.write((bit<32>)0, 1);
+        } else if ((hdr.ttt.tl == sq) && (hdr.ttt.ml == sq) && (hdr.ttt.bl == TTT_BLANK)) {
+            hdr.ttt.bl = TTT_NAUGHT;
+        } else if ((hdr.ttt.tl == sq) && (hdr.ttt.bl == sq) && (hdr.ttt.ml == TTT_BLANK)) {
+            hdr.ttt.bm = TTT_NAUGHT;
+        } else if ((hdr.ttt.br == sq) &&(hdr.ttt.tr == sq) && (hdr.ttt.mr == TTT_BLANK)) {
+            hdr.ttt.mr = TTT_NAUGHT;
+        } else if ((hdr.ttt.br == sq) &&(hdr.ttt.mr == sq) && (hdr.ttt.tr == TTT_BLANK)) {
+            hdr.ttt.tr = TTT_NAUGHT;
+        } else if ((hdr.ttt.br == sq) &&(hdr.ttt.bm == sq) && (hdr.ttt.bl == TTT_BLANK)) {
+            hdr.ttt.bl = TTT_NAUGHT;
+        } else if ((hdr.ttt.br == sq) &&(hdr.ttt.bl == sq) && (hdr.ttt.bm == TTT_BLANK)) {
+            hdr.ttt.bm = TTT_NAUGHT;
+        } 
+    }*/
+    
+
+    action sw_place() {
+        if (hdr.ttt.mm == TTT_BLANK) {
+            hdr.ttt.mm = TTT_NAUGHT; // if middle is not taken take the middle
+        } else {
+            if ((hdr.ttt.mm == TTT_NAUGHT) && (hdr.ttt.tm == TTT_NAUGHT) && (hdr.ttt.bm == TTT_BLANK)) {
+                hdr.ttt.bm = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_NAUGHT) && (hdr.ttt.bm == TTT_NAUGHT) && (hdr.ttt.tm == TTT_BLANK)) {
+                hdr.ttt.tm = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_NAUGHT) && (hdr.ttt.ml == TTT_NAUGHT) && (hdr.ttt.mr == TTT_BLANK)) {
+                hdr.ttt.mr = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_NAUGHT) && (hdr.ttt.mr == TTT_NAUGHT) && (hdr.ttt.ml == TTT_BLANK)) {
+                hdr.ttt.ml = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_NAUGHT) && (hdr.ttt.tl == TTT_NAUGHT) && (hdr.ttt.br == TTT_BLANK)) {
+                hdr.ttt.br = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_NAUGHT) && (hdr.ttt.br == TTT_NAUGHT) && (hdr.ttt.tl == TTT_BLANK)) {
+                hdr.ttt.tl = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_NAUGHT) && (hdr.ttt.bl == TTT_NAUGHT) && (hdr.ttt.tr == TTT_BLANK)) {
+                hdr.ttt.tr = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_NAUGHT) && (hdr.ttt.tr == TTT_NAUGHT) && (hdr.ttt.bl == TTT_BLANK)) {
+                hdr.ttt.bl = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_CROSS) && (hdr.ttt.tm == TTT_CROSS) && (hdr.ttt.bm == TTT_BLANK)) {
+                hdr.ttt.bm = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_CROSS) && (hdr.ttt.bm == TTT_CROSS) && (hdr.ttt.tm == TTT_BLANK)) {
+                hdr.ttt.tm = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_CROSS) && (hdr.ttt.ml == TTT_CROSS) && (hdr.ttt.mr == TTT_BLANK)) {
+                hdr.ttt.mr = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_CROSS) && (hdr.ttt.mr == TTT_CROSS) && (hdr.ttt.ml == TTT_BLANK)) {
+                hdr.ttt.ml = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_CROSS) && (hdr.ttt.tl == TTT_CROSS) && (hdr.ttt.br == TTT_BLANK)) {
+                hdr.ttt.br = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_CROSS) && (hdr.ttt.br == TTT_CROSS) && (hdr.ttt.tl == TTT_BLANK)) {
+                hdr.ttt.tl = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_CROSS) && (hdr.ttt.bl == TTT_CROSS) && (hdr.ttt.tr == TTT_BLANK)) {
+                hdr.ttt.tr = TTT_NAUGHT;
+            } else if ((hdr.ttt.mm == TTT_CROSS) && (hdr.ttt.tr == TTT_CROSS) && (hdr.ttt.bl == TTT_BLANK)) {
+                hdr.ttt.bl = TTT_NAUGHT;
+            } else {
+                next_place();
             }
-            if ((hdr.ttt.tm == sq) && (hdr.ttt.bm == sq)) {
-                win = 1;
-            }
-            if ((hdr.ttt.tl == sq) && (hdr.ttt.br == sq)) {
-                win = 1;
-            }
-            if ((hdr.ttt.tr == sq) && (hdr.ttt.bl == sq)) {
-                win = 1;
-            }
-        }
-        if (hdr.ttt.tl == sq) {
-            if ((hdr.ttt.tm == sq) && (hdr.ttt.tr == sq)) {
-                win = 1;
-            }
-            if ((hdr.ttt.ml == sq) && (hdr.ttt.bl == sq)) {
-                win = 1;
-            }
-        }
-        if (hdr.ttt.br == sq) {
-            if ((hdr.ttt.bm == sq) && (hdr.ttt.bl == sq)) {
-                win = 1;
-            }
-            if ((hdr.ttt.tr == sq) && (hdr.ttt.mr == sq)) {
-                win = 1;
-            }
-        }
-        if ((hdr.ttt.tl != TTT_BLANK) && (hdr.ttt.tm != TTT_BLANK) && (hdr.ttt.tr != TTT_BLANK) &&
-        (hdr.ttt.ml != TTT_BLANK) && (hdr.ttt.mm != TTT_BLANK) && (hdr.ttt.mr != TTT_BLANK) &&
-        (hdr.ttt.bl != TTT_BLANK) && (hdr.ttt.bm != TTT_BLANK) && (hdr.ttt.br != TTT_BLANK)) {
-            win = 2;
-        }
-        if ((sq == TTT_CROSS) && (win == 1)) {
-            hdr.ttt.status = TTT_PLWIN;
-        } else if ((sq == TTT_NAUGHT) && (win == 1)) {
-            hdr.ttt.status = TTT_SWWIN;
-        } else if (win == 2) {
-            hdr.ttt.status = TTT_DRAW;
         }
     }
 
     action operation_play() {
         load_board();
         player_place();
-        sw_place();
         check_win(TTT_CROSS);
-        check_win(TTT_NAUGHT);
+        if (hdr.ttt.status == TTT_PLAY){
+            sw_place();
+            check_win(TTT_NAUGHT);
+        }
         save_board();
         send_back();
     }

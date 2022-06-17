@@ -44,7 +44,7 @@ def main():
             pkt = Ether(dst='00:04:00:00:00:00', type=0x1234) / ttt(state = s)
             pkt = pkt/' '
 
-            pkt.show()
+            # pkt.show()
             resp = srp1(pkt, iface=iface, timeout=1, verbose=False)
         except Exception as error:
             print(error)
